@@ -21,16 +21,19 @@ Optional: add it to your app menu (and optionally start it at login):
 ./install.sh
 ```
 
-Needs Python 3.8+ (already on Ubuntu). Optional extras for nicer results:
+Needs Python 3.8+ (already on Ubuntu). PDF covers are a snapshot of the first page, made with
+`pdftoppm` from `poppler-utils`, which ships with Ubuntu desktop. If it's missing: `sudo apt install poppler-utils`.
+
+Optional extras (faster PDF covers, smaller cover files):
 
 ```bash
-pip install --user pypdf pypdfium2 pillow   # PDF titles/page counts, real PDF cover thumbnails, smaller covers
+pip install --user pypdf pypdfium2 pillow
 ```
 
 ## What it does
 
 - **Recognises** PDF, EPUB, MOBI, AZW, AZW3, KF8, PRC, FB2, DjVu, CHM, CBZ/CBR/CB7, TXT, Markdown, RTF, DOC/DOCX, ODT, PPT/PPTX/ODP.
-- **Reads metadata and covers** from EPUB, MOBI/AZW3, FB2, PDF, CBZ and DOCX/ODT. If a file has no metadata, it guesses from the filename (`Author - Title.pdf`). If a book has no cover, it gets a generated forest-coloured one.
+- **Reads metadata and covers** from EPUB, MOBI/AZW3, FB2, PDF, CBZ and DOCX/ODT. PDF covers are a snapshot of page 1. If a file has no metadata, it guesses from the filename (`Author - Title.pdf`). If a book has no cover, it gets a generated forest-coloured one.
 - **Watches folders.** Drop files into `~/Books` (or any folder you add in Settings) and they show up within a minute. Click ↻ to check right away.
 - **Follows your files.** Move or rename a file and Grove recognises it by content, so ratings, notes and progress stay attached.
 - **Sort and filter** by title, author, recently added or opened, rating, size, format or year. Shelves cover *Continue reading*, *Favorites*, *To read*, *Finished*, *Ebooks / Documents / Comics*, *Duplicates* and *Missing files*. Filter by format, tag or author, and search across titles, authors, tags and notes (press `/`).

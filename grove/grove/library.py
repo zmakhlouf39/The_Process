@@ -323,6 +323,20 @@ class Library:
                 self.db.commit()
         return self.get(book_id)
 
+    def backfill_pdf_covers(self):
+        """Give first-page covers to PDFs indexed before a renderer was available."""
+        with self.lock:
+            rows = self.db.execute(
+                "SELECT id, path FROM books WHERE ext='pdf' AND has_cover=0 AND missing=0").fetchall()
+        for r in rows:
+            if not os.path.exists(r["path"]):
+                continue
+            data = metadata.render_pdf_page(r["path"])
+            if data and metadata.save_cover(data, os.path.join(self.cover_dir, f"{r['id']}.jpg")):
+                with self.lock:
+                    self.db.execute("UPDATE books SET has_cover=1 WHERE id=?", (r["id"],))
+                    self.db.commit()
+
     # ---------------------------------------------------------------- importing
     def import_file(self, filename, stream, length):
         """Save an uploaded file into <library_root>/Inbox and index it."""

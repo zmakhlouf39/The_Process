@@ -7,7 +7,10 @@ import base64
 import io
 import os
 import re
+import shutil
 import struct
+import subprocess
+import tempfile
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -297,6 +300,8 @@ def read_pdf(path, want_cover=True):
                 pass
         except Exception:
             pass
+    elif shutil.which("pdfinfo"):
+        info = pdfinfo(path)
     else:
         try:
             with open(path, "rb") as f:
@@ -310,20 +315,76 @@ def read_pdf(path, want_cover=True):
             info["pages"] = len(re.findall(rb"/Type\s*/Page[^s]", head)) or None
         except Exception:
             pass
-    if want_cover and pypdfium2 is not None:
+    if want_cover:
+        cover = render_pdf_page(path)
+    return info, cover
+
+
+def render_pdf_page(path, height=540):
+    """Screenshot the first page of a PDF as JPEG bytes.
+
+    Tries, in order: pypdfium2 (pip), pdftoppm (poppler-utils, preinstalled on
+    Ubuntu), mutool (mupdf-tools), ghostscript. Returns None if none work.
+    """
+    if pypdfium2 is not None:
         try:
             doc = pypdfium2.PdfDocument(path)
-            page = doc[0]
-            w, h = page.get_size()
-            scale = 540 / max(h, 1)
-            pil = page.render(scale=scale).to_pil()
-            buf = io.BytesIO()
-            pil.convert("RGB").save(buf, "JPEG", quality=82)
-            cover = buf.getvalue()
-            doc.close()
+            try:
+                page = doc[0]
+                _w, h = page.get_size()
+                pil = page.render(scale=height / max(h, 1)).to_pil()
+                buf = io.BytesIO()
+                pil.convert("RGB").save(buf, "JPEG", quality=82)
+                return buf.getvalue()
+            finally:
+                doc.close()
         except Exception:
-            cover = None
-    return info, cover
+            pass
+    with tempfile.TemporaryDirectory(prefix="grove-") as tmp:
+        out = os.path.join(tmp, "page")
+        attempts = []
+        if shutil.which("pdftoppm"):
+            attempts.append((["pdftoppm", "-f", "1", "-l", "1", "-singlefile", "-scale-to-y", str(height),
+                              "-scale-to-x", "-1", "-png", path, out], out + ".png"))
+        if shutil.which("mutool"):
+            attempts.append((["mutool", "draw", "-q", "-h", str(height), "-o", out + ".png", path, "1"], out + ".png"))
+        if shutil.which("gs"):
+            attempts.append((["gs", "-q", "-dSAFER", "-dBATCH", "-dNOPAUSE", "-dFirstPage=1", "-dLastPage=1",
+                              "-sDEVICE=png16m", "-r60", "-o", out + ".png", path], out + ".png"))
+        for cmd, result in attempts:
+            try:
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=40, check=True)
+                if os.path.exists(result) and os.path.getsize(result) > 0:
+                    with open(result, "rb") as f:
+                        return f.read()
+            except Exception:
+                continue
+    return None
+
+
+def pdfinfo(path):
+    """Title/author/pages via poppler's pdfinfo, used when pypdf isn't installed."""
+    if not shutil.which("pdfinfo"):
+        return {}
+    try:
+        out = subprocess.run(["pdfinfo", path], capture_output=True, timeout=20).stdout.decode("utf-8", "replace")
+    except Exception:
+        return {}
+    info = {}
+    for line in out.splitlines():
+        key, _, val = line.partition(":")
+        val = _clean(val)
+        if not val:
+            continue
+        if key == "Title" and not re.match(r"^(untitled|microsoft word|document\d*)", val, re.I):
+            info["title"] = val
+        elif key == "Author" and not re.match(r"^(user|admin|owner|unknown)$", val, re.I):
+            info["author"] = val
+        elif key == "Pages" and val.isdigit():
+            info["pages"] = int(val)
+        elif key == "CreationDate":
+            info["year"] = _year(val)
+    return info
 
 
 # --------------------------------------------------------------------------

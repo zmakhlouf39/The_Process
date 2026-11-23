@@ -294,6 +294,10 @@ class Handler(BaseHTTPRequestHandler):
 
 def watcher(lib: Library):
     """Background rescan so new files dropped into your folders just appear."""
+    try:
+        lib.backfill_pdf_covers()
+    except Exception:
+        pass
     while True:
         try:
             lib.scan()
