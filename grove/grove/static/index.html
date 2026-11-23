@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grove</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Nunito:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<svg class="forest" viewBox="0 0 1600 260" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <g class="far">
+    <path d="M0 260V170l40-60 40 60 30-80 35 80 25-50 30 50 45-90 45 90 30-60 30 60 40-70 40 70 35-55 35 55 45-95 45 95 30-50 30 50 40-80 40 80 35-60 35 60 45-85 45 85 30-55 30 55 40-75 40 75 35-50 35 50 45-90 45 90 30-60 30 60 40-70 40 70 35-55 35 55 40-80 40 80V260z"/>
+  </g>
+  <g class="near">
+    <path d="M0 260v-50l55-95 55 95 25-40 40-90 40 90 25 40 50-110 50 110 30-55 40-75 40 75 30 55 55-105 55 105 25-45 35-70 35 70 25 45 50-100 50 100 30-50 45-85 45 85 30 50 55-115 55 115 25-40 40-80 40 80 25 40 50-95 50 95 30-55 40-70 40 70 30 55 55-105 55 105V260z"/>
+  </g>
+</svg>
+
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <svg viewBox="0 0 32 32" class="logo"><path d="M27 5C14 5 6 11 6 20c0 2 .5 4 1.5 5.5C9 21 13 16 19 13c-5 4-9 9-10.5 14C10 28 12 28.5 14 28.5 23 28.5 27 19 27 5z" fill="var(--moss)"/></svg>
+      <div><h1>Grove</h1><span class="tag-line">your quiet library</span></div>
+    </div>
+    <nav id="shelves"></nav>
+    <div class="side-section"><h3>Formats</h3><div id="formats" class="chips"></div></div>
+    <div class="side-section"><h3>Tags</h3><div id="tags" class="chips"></div></div>
+    <div class="side-section"><h3>Authors</h3><div id="authors" class="author-list"></div></div>
+    <div class="side-foot" id="stats"></div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <button class="icon-btn only-mobile" id="menuBtn" title="Menu">☰</button>
+      <label class="search">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+        <input id="search" type="search" placeholder="Search titles, authors, tags, notes…  ( / )" autocomplete="off">
+      </label>
+      <select id="sort" title="Sort by">
+        <option value="title">Title A–Z</option>
+        <option value="author">Author</option>
+        <option value="added">Recently added</option>
+        <option value="opened">Recently opened</option>
+        <option value="rating">Rating</option>
+        <option value="size">File size</option>
+        <option value="format">Format</option>
+        <option value="year">Year</option>
+      </select>
+      <div class="seg" id="viewSeg">
+        <button data-view="grid" class="on" title="Grid">▦</button>
+        <button data-view="list" title="List">☰</button>
+      </div>
+      <button class="btn ghost" id="selectBtn" title="Select several books">Select</button>
+      <button class="btn ghost" id="tidyBtn" title="Sort files into folders">Tidy up</button>
+      <button class="btn" id="addBtn" title="Add files">＋ Add</button>
+      <button class="icon-btn" id="scanBtn" title="Rescan folders"><span id="scanIcon">↻</span></button>
+      <button class="icon-btn" id="themeBtn" title="Day / night">☾</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+      <input type="file" id="fileInput" multiple hidden>
+    </header>
+
+    <div class="headline">
+      <h2 id="viewTitle">All books</h2>
+      <span id="viewCount" class="muted"></span>
+      <span id="scanStatus" class="muted scan-status"></span>
+    </div>
+
+    <div id="bulkBar" class="bulk-bar hidden">
+      <span id="bulkCount">0 selected</span>
+      <button class="btn ghost sm" data-bulk="all">Select all</button>
+      <button class="btn ghost sm" data-bulk="tag">Add tag</button>
+      <button class="btn ghost sm" data-bulk="fav">♥ Favorite</button>
+      <select id="bulkStatus" class="sm"><option value="">Set status…</option><option value="unread">Unread</option><option value="reading">Reading</option><option value="finished">Finished</option></select>
+      <button class="btn ghost sm" data-bulk="tidy">Tidy these</button>
+      <button class="btn ghost sm" data-bulk="done">Done</button>
+    </div>
+
+    <section id="books" class="grid"></section>
+    <div id="empty" class="empty hidden"></div>
+  </main>
+</div>
+
+<!-- detail drawer -->
+<aside id="drawer" class="drawer" aria-hidden="true">
+  <button class="icon-btn close" data-close="drawer">✕</button>
+  <div id="drawerBody"></div>
+</aside>
+<div id="scrim" class="scrim"></div>
+
+<!-- reader -->
+<div id="reader" class="reader hidden">
+  <div class="reader-bar">
+    <button class="icon-btn" id="readerClose" title="Close (Esc)">✕</button>
+    <div class="reader-title" id="readerTitle"></div>
+    <div class="reader-tools" id="readerTools"></div>
+  </div>
+  <div class="reader-stage" id="readerStage"></div>
+</div>
+
+<!-- modal -->
+<div id="modal" class="modal hidden"><div class="modal-card" id="modalCard"></div></div>
+
+<div id="dropzone" class="dropzone hidden"><div>🍃 Drop books here to plant them in your library</div></div>
+<div id="toasts" class="toasts"></div>
+
+<script src="/app.js"></script>
+</body>
+</html>
